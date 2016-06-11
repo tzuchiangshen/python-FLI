@@ -10,7 +10,7 @@
 __author__ = 'Craig Wm. Versek'
 __date__ = '2012-08-08'
 
-import sys, time, warnings
+import sys, time, warnings, traceback
 
 try:
     from collections import OrderedDict
@@ -72,12 +72,35 @@ class USBCamera(USBDevice):
         mode_index = c_long(2)
         size = c_size_t(0)
 
-        for i in range(0,5):
-            mode_index = c_long(i)
-            self._libfli.FLIGetCameraModeString(self._dev, mode_index, mode_string, size)
-            print "mode_index=%d" % mode_index.value
-            print "size=%d" % size.value
-            print "mode=%s" % mode_string.value
+        try:
+            for i in range(0,5):
+                mode_index = c_long(i)
+                self._libfli.FLIGetCameraModeString(self._dev, mode_index, mode_string, size)
+                print "mode_index=%d" % mode_index.value
+                print "size=%d" % size.value
+                print "mode=%s" % mode_string.value
+        except:
+            print "End of Camera readout mode"
+            #traceback.print_exc()
+
+    def get_camera_mode(self):
+        #LIBFLIAPI FLIGetCameraMode(flidev_t dev, flimode_t *mode_index);
+        mode_index = c_long(-1)
+        print "get current readout mode"
+
+        self._libfli.FLIGetCameraMode(self._dev, byref(mode_index))
+        print "current mode_index=%d" % mode_index.value
+
+    def set_camera_mode(self, mode_index):
+        #LIBFLIAPI FLIGetCameraMode(flidev_t dev, flimode_t *mode_index);
+        print "set current readout mode to %d " % mode_index
+
+        index = c_long(mode_index)
+
+        self._libfli.FLISetCameraMode(self._dev, index)
+        print "ready."
+        
+
 
     def get_image_size(self):
         "returns (row_width, img_rows, img_size)"
@@ -245,6 +268,13 @@ if __name__ == "__main__":
     print "image size:", cam0.get_image_size()
     print "temperature:", cam0.get_temperature()
     cam0.get_camera_mode_string()
+    cam0.get_camera_mode()
+    cam0.set_camera_mode(0)
+    cam0.get_camera_mode()
+    cam0.set_camera_mode(1)
+    cam0.get_camera_mode()
+    cam0.set_camera_mode(0)
+    cam0.get_camera_mode()
     #cam0.set_image_binning(2,2)
     #cam0.set_bitdepth("16bit") #this should generate a warning for any USB camera in libfli-1.104
     #cam0.set_exposure(5)
