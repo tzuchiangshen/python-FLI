@@ -18,7 +18,10 @@ except ImportError:
     from odict import OrderedDict
 
 from ctypes import pointer, POINTER, byref, sizeof, Structure, c_char,\
-                   c_char_p, c_long, c_ubyte, c_uint8, c_uint16, c_double
+                   c_char_p, c_long, c_ubyte, c_uint8, c_uint16, c_double, \
+                   create_string_buffer, \
+                   c_size_t
+                   
 
 
 import numpy
@@ -62,6 +65,19 @@ class USBCamera(USBDevice):
         self._libfli.FLIGetVisibleArea(self._dev, byref(tmp1), byref(tmp2), byref(tmp3), byref(tmp4))
         info['visible_area'] = (tmp1.value,tmp2.value,tmp3.value,tmp4.value)        
         return info
+    def get_camera_mode_string(self):
+        #("FLIGetCameraModeString", [flidev_t, flimode_t, c_char_p, c_size_t]),  
+        #(flidev_t dev, flimode_t mode_index, char *mode_string, size_t siz);
+        mode_string = create_string_buffer("", 100)
+        mode_index = c_long(2)
+        size = c_size_t(0)
+
+        for i in range(0,5):
+            mode_index = c_long(i)
+            self._libfli.FLIGetCameraModeString(self._dev, mode_index, mode_string, size)
+            print "mode_index=%d" % mode_index.value
+            print "size=%d" % size.value
+            print "mode=%s" % mode_string.value
 
     def get_image_size(self):
         "returns (row_width, img_rows, img_size)"
@@ -228,9 +244,10 @@ if __name__ == "__main__":
     print "info:", cam0.get_info()
     print "image size:", cam0.get_image_size()
     print "temperature:", cam0.get_temperature()
-    cam0.set_image_binning(2,2)
-    cam0.set_bitdepth("16bit") #this should generate a warning for any USB camera in libfli-1.104
-    cam0.set_exposure(5)
-    img = cam0.take_photo()
-    print img
+    cam0.get_camera_mode_string()
+    #cam0.set_image_binning(2,2)
+    #cam0.set_bitdepth("16bit") #this should generate a warning for any USB camera in libfli-1.104
+    #cam0.set_exposure(5)
+    #img = cam0.take_photo()
+    #print img
     
